@@ -21,7 +21,7 @@ class GithubClient(githubRepos: GHRepos) {
     val eventualResponse: Future[GHResponse[List[Repository]]] =
       listUserRepos.execFuture[HttpResponse[String]]()
 
-    liftT(eventualResponse) { repos =>
+    liftOptionT(eventualResponse) { repos =>
       repos.map(_.name)
     }
   }
@@ -33,14 +33,14 @@ class GithubClient(githubRepos: GHRepos) {
     val listContributors = githubRepos.listContributors(username, repoName)
     val eventualResponse = listContributors.execFuture[HttpResponse[String]]()
 
-    liftT(eventualResponse) { contribs =>
+    liftOptionT(eventualResponse) { contribs =>
       contribs.map(_.login)
     }
   }
 
-  private def liftT[A](
+  private def liftOptionT[A, B](
     eventualResponse: Future[GithubResponses.GHResponse[A]]
-  )(f: A => List[String]): OptionT[Future, List[String]] = {
+  )(f: A => B): OptionT[Future, B] = {
     val eventualOption = eventualResponse.map {
       case Right(v) => Some(f(v.result))
       case Left(_)  =>
