@@ -1,5 +1,6 @@
 package com.diogosantos.github
 
+import com.typesafe.scalalogging.Logger
 import github4s.Github._
 import github4s.GithubResponses.GHResponse
 import github4s.free.domain.Repository
@@ -8,11 +9,13 @@ import github4s.{GHRepos, GithubResponses}
 import scalaj.http.HttpResponse
 import scalaz._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class GithubClient(githubRepos: GHRepos) {
+class GithubClient(githubRepos: GHRepos)(
+  implicit executionContext: ExecutionContext
+) {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+  val logger = Logger(getClass)
 
   def fetchRepositoriesNames(
     username: String
@@ -43,8 +46,8 @@ class GithubClient(githubRepos: GHRepos) {
   )(f: A => B): OptionT[Future, B] = {
     val eventualOption = eventualResponse.map {
       case Right(v) => Some(f(v.result))
-      case Left(_)  =>
-        //TODO: log the error
+      case Left(e)  =>
+        logger.error("Error fetching data from Github: ", e)
         None
     }
     OptionT(eventualOption)

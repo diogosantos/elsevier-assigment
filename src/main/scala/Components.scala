@@ -1,11 +1,14 @@
-import com.diogosantos.github.{GithubClient, FetchUserRepositoriesCommand}
+import com.diogosantos.github.{FetchUserRepositoriesCommand, GithubClient}
 import github4s.Github
+import scala.concurrent.ExecutionContext
+
 object Components {
 
-  private val githubToken = "6263a918c2298d670a105d089923205b10e7bbe3"
+  private val githubToken = Option(sys.env("GITHUB_APP_TOKEN"))
 
-  private val githubReposApi = Github(Some(githubToken)).repos
-  private val githubClient = new GithubClient(githubReposApi)
+  private val githubReposApi = Github(githubToken).repos
+  private val githubExecutionContext: ExecutionContext = ExecutionContext.fromExecutorService(null)
+  private val githubClient = new GithubClient(githubReposApi)(githubExecutionContext)
 
   val fetchUserRepositoriesCommand: FetchUserRepositoriesCommand = new FetchUserRepositoriesCommand(githubClient)
 
