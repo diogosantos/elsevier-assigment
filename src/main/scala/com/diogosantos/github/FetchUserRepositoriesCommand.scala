@@ -1,22 +1,22 @@
 package com.diogosantos.github
 
-import scalaz._
 import scalaz.Scalaz._
-import scala.concurrent.Future
+import scalaz._
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class FetchUserRepositoriesCommand(githubClient: GithubClient) {
 
   def run(username: String): OptionT[Future, List[RichRepo]] = {
-    val eventualRepoNames = githubClient.fetchRepositoriesNames(username)
-
-    eventualRepoNames.flatMap { repoNames: List[String] =>
-      repoNames.map { repoName =>
-        val eventualContributors =
-          githubClient.fetchRepositoryContributors(username, repoName)
-        eventualContributors.map(RichRepo(repoName, _))
+    for {
+      repoNames <- githubClient.fetchRepositoriesNames(username)
+      richRepos <- repoNames.map { repoName =>
+        githubClient
+          .fetchRepositoryContributors(username, repoName)
+          .map(RichRepo(repoName, _))
       }.sequenceU
-    }
+    } yield richRepos
   }
 
 }
